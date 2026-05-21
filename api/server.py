@@ -62,6 +62,7 @@ async def audio(audio : UploadFile = File(...)):
         )
         response = client.models.generate_content(
                 model="gemini-2.5-flash-lite",
+                
                 contents=[
                         audio_part,
                         "Provide a clean text transcription of this audio data."
