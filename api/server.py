@@ -7,7 +7,6 @@ from .Web import main
 import os
 from google import genai
 from google.genai import types
-import io
 app = FastAPI()
 origin = [
         "http://localhost:5173",
@@ -40,10 +39,8 @@ def serve():
 @app.get("/{path : path}")
 
 
-
 async def catch_all(path : str):
         return FileResponse("dist/index.html")
-
 
 
 @app.get("/")
@@ -62,7 +59,6 @@ async def audio(audio : UploadFile = File(...)):
         )
         response = client.models.generate_content(
                 model="gemini-2.5-flash-lite",
-                
                 contents=[
                         audio_part,
                         "Provide a clean text transcription of this audio data."
@@ -86,8 +82,6 @@ async def audio(audio : UploadFile = File(...)):
                         "bot_msg" : bot_response["msg"],
                         "url" : "not open"
                 }
-
-
 @app.post("/usermsg")
 async def root_post(data : dict):
         try:
