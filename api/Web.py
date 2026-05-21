@@ -4,7 +4,7 @@ from langchain_core.messages import AIMessage,SystemMessage,HumanMessage
 from langchain_core.tools import tool,Tool
 from langgraph.graph.message import  TypedDict,add_messages,Annotated
 from langchain_openai import ChatOpenAI
-from Tools import browser_tool
+from .Tools import browser_tool
 from dotenv import load_dotenv
 import os
 import json
