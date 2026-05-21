@@ -4,6 +4,7 @@ import user_logo from './assets/user_icon.png';
 import bot_logo from './assets/bot_icon.png';
 import settings_logo from './assets/settings.png';
 import send_logo from './assets/send-button.png';
+import { FaMicrophone, FaStop} from 'react-icons/fa'
 
 function App() {
   const navigate = useNavigate();
@@ -11,7 +12,83 @@ function App() {
   const [user_msg, setUser_msg] = useState("");
   const [show_user_text, setShow_user_text] = useState([]);
   const [show_bot_text, setShow_bot_text] = useState([]);
+  const [recording, setReccording] = useState(false);
+  const chunksRef = useRef([]);
+  const Media = useRef(null);
   const chatRef = useRef(null);
+  const streamRef = useRef(null);
+  const startrecording = async () =>{
+    try{
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio : true
+    });
+    streamRef.current = stream
+    const Mediarecord = new MediaRecorder(stream);
+    Media.current = Mediarecord;
+    chunksRef.current = [];
+    Mediarecord.ondataavailable = (event) =>{
+      if(event.data.size >0){
+      chunksRef.current.push(event.data);
+      }
+    }
+     Mediarecord.onstop = async () =>{
+    const blob = new Blob(
+      chunksRef.current,
+      {
+        "type" : "audio/webm"
+      }
+    );
+    const formData = new FormData();
+    formData.append(
+      "audio",
+      blob,
+      "recording.webm"
+    );
+     const response = await fetch(
+    "/audio",
+    {
+     method : "POST",
+     body : formData
+
+    }
+   );
+    const data = await response.json();
+    console.log(data["url"])
+    console.log(data["bot_msg"])
+    if(response.ok && (data["url"].startsWith("http://") || data["url"].startsWith("https://"))){
+      window.open(data["url"],"_blank")
+      setShow_user_text([...show_user_text, data["user_txt"]]);
+      setUser_msg("")
+      setShow_bot_text([...show_bot_text, data["bot_msg"]])
+    }
+    else{
+      console.log(data)
+      setShow_user_text([...show_user_text, data["user_txt"]]);
+      setUser_msg("")
+      setShow_bot_text([...show_bot_text, data["bot_msg"]])
+    }
+  }
+   Mediarecord.start();  
+    setReccording(true);
+  }
+  catch(err){
+    console.log(err);
+  }
+  }
+  const stoprecording = async () =>{
+     if (Media.current && Media.current.state === "recording") {
+    Media.current.stop();
+  }
+  if (streamRef.current) {
+    streamRef.current
+      .getTracks()
+      .forEach((track) =>
+        track.stop()
+      );
+  }
+    setReccording(false);
+  }
+ 
   function open() {
     console.log("settings clicked");
     setOpen(!isopen)
@@ -110,32 +187,41 @@ function App() {
         ))}
       </div>
       <div className="msg-area">
-        <div className="chatbot-msg-box">
-          <textarea
-            className="msg-box"
-            value={user_msg}
-            onChange={(e) => {
-              
-              setUser_msg(e.target.value);
-              if (e.target.value) {
-                e.target.style.height = 'auto';
-                e.target.style.height = e.target.scrollHeight + 'px';
-              }
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                send_user_msg();
-                setTimeout(() => {
-                  e.target.style.height = '30px'
-                }, 0)
-              }
-            }}
-            rows={1}
-            style={{ resize: 'none', overflow: 'hidden', minHeight: '40px' }}></textarea>
-        </div>
-        <button className="send-button" onClick={() => { send_user_msg(); }}><img src={send_logo} className="arrow-img" width={50}></img></button>
-      </div>
+  <div className="chatbot-msg-box">
+    <textarea
+      className="msg-box"
+      value={user_msg}
+      onChange={(e) => {
+        setUser_msg(e.target.value);
+        if (e.target.value) {
+          e.target.style.height = 'auto';
+          e.target.style.height = e.target.scrollHeight + 'px';
+        }
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          send_user_msg();
+          setTimeout(() => {
+            e.target.style.height = '30px'
+          }, 0)
+        }
+      }}
+      rows={1}
+      style={{ resize: 'none', overflow: 'hidden', minHeight: '40px' }}
+    />
+  </div>
+  <button className="send-button" onClick={() => { send_user_msg(); }}>
+    <img src={send_logo} className="arrow-img" width={50} alt="send" />
+  </button>
+  
+  {/* Conditional recording button */}
+    { !recording ? <button onClick={startrecording} className="button-mic">
+      <FaMicrophone/>
+    </button> : <button onClick={stoprecording} className="button-mic">
+            <FaStop/>
+    </button>  }
+</div>
     </>
 
   );

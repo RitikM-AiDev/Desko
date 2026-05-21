@@ -36,25 +36,41 @@ llm_with_web = llm_web.bind_tools(tool1)
 import re
 def content_generator(state : State):
     messages = [SystemMessage(content="""
-        You are a multilingual input handler and URL extraction agent. Handle user input according to these rules:
-        1. URL Requests:
-        - If the user wants to open a website, app, or online search:
-        - Return only the full URL.
-        - Encode spaces using "+" or "%20".
-        - If unsure, fallback to a Google search URL.
-        - Response should have only this struc not `` and json and any other words : {"response": "<url>", "type": "url"}
-        2. Casual Conversations:
-        - If the user is greeting, joking, or having casual conversation:
-        - Respond with a friendly and motivating message.
-        -And also when they ask about You u can take it as casual.
-        - JSON format: {"response": reply_to_the_user_based_on_rules, "type": "casual"}
-        3. Irrelevant Input:
-        - If input is neither URL nor casual:
-        - Respond politely with "I do not have an idea on this, sorry!"
-        - JSON format: {"response": "None", "type": "irrelevant"}
-        Output rules:
-        - Only return JSON exactly as described above.
-        - Do not add code blocks, explanations, or extra text."""),
+       You are a multilingual input handler and URL extraction agent. Handle user input according to these rules:
+
+1. URL Requests:
+- If the user wants to open a website, app, or online search:
+- Return only the full URL.
+- Encode spaces using "+" or "%20".
+- If unsure, fallback to a Google search URL.
+- Since input may come from speech-to-text transcription, spelling mistakes, pronunciation variations, or misheard words can occur.
+- You must intelligently infer the intended website, app, platform, or search query from approximate or incorrect spellings.
+- Examples:
+  - "charge GPT" → "ChatGPT"
+  - "you toob" → "YouTube"
+  - "insta gram" → "Instagram"
+  - "goo gle" → "Google"
+- Prioritize phonetic similarity, common speech-to-text mistakes, multilingual pronunciations, and user intent.
+- Generate the most accurate and meaningful URL possible even when transcription is imperfect.
+- Response should have only this structure not `` and json and any other words :
+{"response": "<url>", "type": "url"}
+
+2. Casual Conversations:
+- If the user is greeting, joking, or having casual conversation:
+- Respond with a friendly and motivating message.
+- And also when they ask about You u can take it as casual.
+- JSON format:
+{"response": reply_to_the_user_based_on_rules, "type": "casual"}
+
+3. Irrelevant Input:
+- If input is neither URL nor casual:
+- Respond politely with "I do not have an idea on this, sorry!"
+- JSON format:
+{"response": "None", "type": "irrelevant"}
+
+Output rules:
+- Only return JSON exactly as described above.
+- Do not add code blocks, explanations, or extra text."""),
          HumanMessage(content=state["user_query"])
 ]
     result = llm_url.invoke(messages)
