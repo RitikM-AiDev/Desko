@@ -8,6 +8,9 @@ from .Tools import browser_tool
 from dotenv import load_dotenv
 import os
 import json
+from langchain_community.utilities import GoogleSerperAPIWrapper
+
+serper = GoogleSerperAPIWrapper()
 load_dotenv(override=True)
 llm_url = ChatOpenAI(
 model="gemini-2.5-flash",  
@@ -29,9 +32,14 @@ class State(TypedDict):
     bot_msg : str
     response_type: str
 
+@tool
+def web_search_tool(query : str):
+    """This tool is used to web search and get relevant correct urls"""
+    result = serper.run(query)
+    return result
 
+tool1 = [browser_tool,web_search_tool]
 
-tool1 = [browser_tool]
 llm_with_web = llm_web.bind_tools(tool1)
 import re
 def content_generator(state : State):
@@ -124,31 +132,40 @@ Output Requirements:
           "response_type" : json_str.get("type", "irrelevant"),
           "url" : json_str.get("response","")
     }
-def url_opener(state : State):
-    print("opener called")
-    messages = [SystemMessage(content=f"""
-        You are a  web-opening agent.
-        Your task: always open the URL provided by the user using the browser tool"""),
-        HumanMessage(content=state["url"])]
-    result = llm_with_web.invoke(messages)
+def url_opener(state: State):
+    result = llm_with_web.invoke(state["messages"])
+
     return {
-          "messages" : [result],
-          "bot_msg" : f"I Sucessfully Opened {state['url']} !!"
+        "messages": [result]
     }
-    
 graph_builder = StateGraph(State)
-tool_node = ToolNode([browser_tool])
+tool_node = ToolNode([browser_tool,web_search_tool])
 graph_builder.add_node("generator",content_generator)
 graph_builder.add_node("url agent",url_opener)
-graph_builder.add_edge(START,"generator")
-def next_node(state : State):
-    if state["response_type"].lower() == "url":
-            return ["url agent"]
-    else:
-        return [END]
-graph_builder.add_conditional_edges("generator",next_node)
-graph_builder.add_edge("url agent",END)
+graph_builder.add_node("tools",tool_node)
+graph_builder.add_edge(START, "generator")
+graph_builder.add_node("generator", content_generator)
+graph_builder.add_node("url agent", url_opener)
+graph_builder.add_node("tools", tool_node)
 
+graph_builder.add_edge(START, "generator")
+
+graph_builder.add_conditional_edges(
+    "generator",
+    lambda state: "url agent"
+    if state["response_type"].lower() == "url"
+    else END
+)
+
+graph_builder.add_conditional_edges(
+    "url agent",
+    tools_condition
+)
+
+graph_builder.add_edge(
+    "tools",
+    "url agent"
+)
 graph = graph_builder.compile()
 def main(user_input):
         try:        
