@@ -140,10 +140,6 @@ def url_opener(state: State):
     }
 graph_builder = StateGraph(State)
 tool_node = ToolNode([browser_tool,web_search_tool])
-graph_builder.add_node("generator",content_generator)
-graph_builder.add_node("url agent",url_opener)
-graph_builder.add_node("tools",tool_node)
-graph_builder.add_edge(START, "generator")
 graph_builder.add_node("generator", content_generator)
 graph_builder.add_node("url agent", url_opener)
 graph_builder.add_node("tools", tool_node)
