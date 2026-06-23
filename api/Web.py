@@ -17,13 +17,13 @@ from langchain_community.utilities import GoogleSerperAPIWrapper
 from .Tools import browser_tool
 load_dotenv(override=True)
 llm_classifier = ChatOpenAI(
-    model="gemini-2.5-flash-lite",
+    model="gemini-2.5-flash",
     openai_api_key=os.getenv("GEMINI_API_KEY"),
     openai_api_base=os.getenv("GEMINI_BASE_URL"),
 )
 
 llm_agent = ChatOpenAI(
-    model="gemini-2.5-flash-lite",
+    model="gemini-2.5-flash",
     openai_api_key=os.getenv("GEMINI_API_KEY"),
     openai_api_base=os.getenv("GEMINI_BASE_URL"),
 )
