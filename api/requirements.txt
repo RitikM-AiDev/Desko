@@ -12,3 +12,4 @@ python-dotenv
 playwright
 google-genai
 python-multipart
+langchain_community
